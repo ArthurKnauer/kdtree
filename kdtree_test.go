@@ -23,9 +23,9 @@ import (
 	"time"
 
 	pq "github.com/jupp0r/go-priority-queue"
-	"github.com/ArthurKnauer/kdtree"
-	"github.com/ArthurKnauer/kdtree/kdrange"
-	. "github.com/ArthurKnauer/kdtree/points"
+	"github.com/kyroy/kdtree"
+	"github.com/kyroy/kdtree/kdrange"
+	. "github.com/kyroy/kdtree/points"
 	"github.com/stretchr/testify/assert"
 )
 

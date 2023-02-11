@@ -17,10 +17,9 @@
 package points_test
 
 import (
-	"testing"
-
-	"github.com/ArthurKnauer/kdtree/points"
+	"github.com/kyroy/kdtree/points"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestNewPoint(t *testing.T) {

@@ -22,7 +22,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/ArthurKnauer/kdtree/kdrange"
+	"github.com/kyroy/kdtree/kdrange"
 	pq "github.com/kyroy/priority-queue"
 )
 
