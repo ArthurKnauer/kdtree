@@ -19,10 +19,11 @@ package kdtree
 
 import (
 	"fmt"
-	"github.com/kyroy/kdtree/kdrange"
-	"github.com/kyroy/priority-queue"
 	"math"
 	"sort"
+
+	"github.com/kyroy/kdtree/kdrange"
+	pq "github.com/kyroy/priority-queue"
 )
 
 // Point specifies one element of the k-d tree.
@@ -35,13 +36,26 @@ type Point interface {
 
 // KDTree represents the k-d tree.
 type KDTree struct {
-	root *node
+	root     *node
+	distance DistanceFunc
 }
+
+// Used for different distance functions (manhattan, euclidean, etc.)
+type DistanceFunc func(p1, p2 Point) float64
 
 // New returns a balanced k-d tree.
 func New(points []Point) *KDTree {
 	return &KDTree{
-		root: newKDTree(points, 0),
+		root:     newKDTree(points, 0),
+		distance: EuclideanDistance,
+	}
+}
+
+// New returns a balanced k-d tree.
+func NewCustom(points []Point, distance DistanceFunc) *KDTree {
+	return &KDTree{
+		root:     newKDTree(points, 0),
+		distance: distance,
 	}
 }
 
@@ -123,7 +137,7 @@ func (t *KDTree) KNN(p Point, k int) []Point {
 	}
 
 	nearestPQ := pq.NewPriorityQueue(pq.WithMinPrioSize(k))
-	knn(p, k, t.root, 0, nearestPQ)
+	t.knn(p, k, t.root, 0, nearestPQ)
 
 	points := make([]Point, 0, k)
 	for i := 0; i < k && 0 < nearestPQ.Len(); i++ {
@@ -145,7 +159,7 @@ func (t *KDTree) RangeSearch(r kdrange.Range) []Point {
 	return t.root.RangeSearch(r, 0)
 }
 
-func knn(p Point, k int, start *node, currentAxis int, nearestPQ *pq.PriorityQueue) {
+func (t *KDTree) knn(p Point, k int, start *node, currentAxis int, nearestPQ *pq.PriorityQueue) {
 	if p == nil || k == 0 || start == nil {
 		return
 	}
@@ -167,7 +181,7 @@ func knn(p Point, k int, start *node, currentAxis int, nearestPQ *pq.PriorityQue
 	// 2. move up
 	currentAxis = (currentAxis - 1 + p.Dimensions()) % p.Dimensions()
 	for path, currentNode = popLast(path); currentNode != nil; path, currentNode = popLast(path) {
-		currentDistance := distance(p, currentNode)
+		currentDistance := t.distance(p, currentNode)
 		checkedDistance := getKthOrLastDistance(nearestPQ, k-1)
 		if currentDistance < checkedDistance {
 			nearestPQ.Insert(currentNode, currentDistance)
@@ -182,18 +196,10 @@ func knn(p Point, k int, start *node, currentAxis int, nearestPQ *pq.PriorityQue
 			} else {
 				next = currentNode.Left
 			}
-			knn(p, k, next, (currentAxis+1)%p.Dimensions(), nearestPQ)
+			t.knn(p, k, next, (currentAxis+1)%p.Dimensions(), nearestPQ)
 		}
 		currentAxis = (currentAxis - 1 + p.Dimensions()) % p.Dimensions()
 	}
-}
-
-func distance(p1, p2 Point) float64 {
-	sum := 0.
-	for i := 0; i < p1.Dimensions(); i++ {
-		sum += math.Pow(p1.Dimension(i)-p2.Dimension(i), 2.0)
-	}
-	return math.Sqrt(sum)
 }
 
 func planeDistance(p Point, planePosition float64, dim int) float64 {
