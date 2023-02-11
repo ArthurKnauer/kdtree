@@ -17,7 +17,7 @@
 package kdrange_test
 
 import (
-	"github.com/kyroy/kdtree/kdrange"
+	"github.com/ArthurKnauer/kdtree/kdrange"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

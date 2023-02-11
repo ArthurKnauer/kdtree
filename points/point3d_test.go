@@ -17,9 +17,10 @@
 package points_test
 
 import (
-	"github.com/kyroy/kdtree/points"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/ArthurKnauer/kdtree/points"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPoint3D_Dimensions(t *testing.T) {
