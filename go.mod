@@ -7,3 +7,5 @@ require (
 	github.com/kyroy/priority-queue v0.0.0-20180327160706-6e21825e7e0c
 	github.com/stretchr/testify v1.4.0
 )
+
+replace github.com/kyroy/kdtree v0.0.0 => github.com/ArthurKnauer/kdtree v0.0.0
