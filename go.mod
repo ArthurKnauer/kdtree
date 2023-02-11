@@ -1,4 +1,4 @@
-module github.com/kyroy/kdtree
+module github.com/ArthurKnauer/kdtree
 
 go 1.13
 
