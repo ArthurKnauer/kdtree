@@ -87,7 +87,7 @@ func printTreeNode(n *node) string {
 	if n != nil && (n.Left != nil || n.Right != nil) {
 		return fmt.Sprintf("[%s %s %s]", printTreeNode(n.Left), n.String(), printTreeNode(n.Right))
 	}
-	return fmt.Sprintf("%s", n)
+	return n.String()
 }
 
 // Insert adds a point to the k-d tree.
@@ -156,7 +156,17 @@ func (t *KDTree) RangeSearch(r kdrange.Range) []Point {
 		return []Point{}
 	}
 
-	return t.root.RangeSearch(r, 0)
+	return t.root.rangeSearch(r, 0)
+}
+
+// RayTrace returns the first point (with the radius) that intersects this LineSegment from start to end
+// and the dist-factor from [0,1], or "max float" if no hit
+func (t *KDTree) LineTrace(start Point, end Point, radius float64) (*Point, float64) {
+	if t.root == nil {
+		return nil, math.MaxFloat64
+	}
+
+	return t.root.lineTrace(start, end, radius, 0)
 }
 
 func (t *KDTree) knn(p Point, k int, start *node, currentAxis int, nearestPQ *pq.PriorityQueue) {
@@ -320,7 +330,7 @@ func (n *node) Remove(p Point, axis int) (*node, *node) {
 	// equals, remove n
 
 	if n.Left != nil {
-		largest := n.Left.FindLargest(axis, nil)
+		largest := n.Left.findLargest(axis, nil)
 		removed, sub := n.Left.Remove(largest, (axis+1)%n.Dimensions())
 
 		removed.Left = n.Left
@@ -332,7 +342,7 @@ func (n *node) Remove(p Point, axis int) (*node, *node) {
 	}
 
 	if n.Right != nil {
-		smallest := n.Right.FindSmallest(axis, nil)
+		smallest := n.Right.findSmallest(axis, nil)
 		removed, sub := n.Right.Remove(smallest, (axis+1)%n.Dimensions())
 
 		removed.Left = n.Left
@@ -347,33 +357,33 @@ func (n *node) Remove(p Point, axis int) (*node, *node) {
 	return n, nil
 }
 
-func (n *node) FindSmallest(axis int, smallest *node) *node {
+func (n *node) findSmallest(axis int, smallest *node) *node {
 	if smallest == nil || n.Dimension(axis) < smallest.Dimension(axis) {
 		smallest = n
 	}
 	if n.Left != nil {
-		smallest = n.Left.FindSmallest(axis, smallest)
+		smallest = n.Left.findSmallest(axis, smallest)
 	}
 	if n.Right != nil {
-		smallest = n.Right.FindSmallest(axis, smallest)
+		smallest = n.Right.findSmallest(axis, smallest)
 	}
 	return smallest
 }
 
-func (n *node) FindLargest(axis int, largest *node) *node {
+func (n *node) findLargest(axis int, largest *node) *node {
 	if largest == nil || n.Dimension(axis) > largest.Dimension(axis) {
 		largest = n
 	}
 	if n.Left != nil {
-		largest = n.Left.FindLargest(axis, largest)
+		largest = n.Left.findLargest(axis, largest)
 	}
 	if n.Right != nil {
-		largest = n.Right.FindLargest(axis, largest)
+		largest = n.Right.findLargest(axis, largest)
 	}
 	return largest
 }
 
-func (n *node) RangeSearch(r kdrange.Range, axis int) []Point {
+func (n *node) rangeSearch(r kdrange.Range, axis int) []Point {
 	points := []Point{}
 
 	for dim, limit := range r {
@@ -385,11 +395,74 @@ func (n *node) RangeSearch(r kdrange.Range, axis int) []Point {
 
 checkChildren:
 	if n.Left != nil && n.Dimension(axis) >= r[axis][0] {
-		points = append(points, n.Left.RangeSearch(r, (axis+1)%n.Dimensions())...)
+		points = append(points, n.Left.rangeSearch(r, (axis+1)%n.Dimensions())...)
 	}
 	if n.Right != nil && n.Dimension(axis) <= r[axis][1] {
-		points = append(points, n.Right.RangeSearch(r, (axis+1)%n.Dimensions())...)
+		points = append(points, n.Right.rangeSearch(r, (axis+1)%n.Dimensions())...)
 	}
 
 	return points
+}
+
+func (n *node) lineTrace(start Point, end Point, radius float64, axis int) (*Point, float64) {
+	closest := &n.Point
+	closestT := n.lineDist(start, end, radius)
+
+	onLeft, onRight := lineOnSide(start, end, radius, n.Dimension(axis), axis)
+
+	if n.Left != nil && onLeft {
+		left, leftT := n.Left.lineTrace(start, end, radius, (axis+1)%n.Dimensions())
+		if leftT < closestT {
+			closest = left
+			closestT = leftT
+		}
+
+	}
+	if n.Right != nil && onRight {
+		right, rightT := n.Right.lineTrace(start, end, radius, (axis+1)%n.Dimensions())
+		if rightT < closestT {
+			closest = right
+			closestT = rightT
+		}
+	}
+
+	return closest, closestT
+}
+
+func (n *node) lineDist(start Point, end Point, radius float64) float64 {
+	SEx := end.Dimension(0) - start.Dimension(0)
+	SEy := end.Dimension(1) - start.Dimension(1)
+
+	MSx := start.Dimension(0) - n.Dimension(0)
+	MSy := start.Dimension(1) - n.Dimension(1)
+
+	a2 := 2 * (SEx*SEx + SEy*SEy)
+	b := 2 * (MSx*SEx + MSy*SEy)
+	c := MSx*MSx + MSy*MSy - radius*radius
+
+	// solving a*t² + b*t + c² = 0
+	discriminant := b*b - 2*a2*c
+	if discriminant < 0 { // never intersecting
+		return math.MaxFloat64
+	}
+
+	root := math.Sqrt(discriminant)
+	t1 := (-b - root) / a2
+	t2 := (-b + root) / a2
+
+	if t1 < 0 {
+		t1 = math.MaxFloat64
+	}
+	if t2 < 0 {
+		t2 = math.MaxFloat64
+	}
+
+	return math.Min(t1, t2)
+}
+
+func lineOnSide(start Point, end Point, radius float64, separator float64, axis int) (bool, bool) {
+	onLeft := start.Dimension(axis)+radius < separator || end.Dimension(axis)+radius < separator
+	onRight := start.Dimension(axis)+radius > separator || end.Dimension(axis)+radius > separator
+
+	return onLeft, onRight
 }

@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ArthurKnauer/kdtree"
 	pq "github.com/jupp0r/go-priority-queue"
-	"github.com/kyroy/kdtree"
 	"github.com/kyroy/kdtree/kdrange"
 	. "github.com/kyroy/kdtree/points"
 	"github.com/stretchr/testify/assert"
@@ -125,9 +125,9 @@ func TestKDTree_InsertWithGenerator(t *testing.T) {
 		name  string
 		input []kdtree.Point
 	}{
-		{name: "p:10,k:5", input: generateTestCaseData(10)},
-		{name: "p:100,k:5", input: generateTestCaseData(100)},
-		{name: "p:1000,k:5", input: generateTestCaseData(1000)},
+		{name: "p:10,k:5", input: generateRandomPoint2Ds(10)},
+		{name: "p:100,k:5", input: generateRandomPoint2Ds(100)},
+		{name: "p:1000,k:5", input: generateRandomPoint2Ds(1000)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -330,17 +330,17 @@ func TestKDTree_BalanceNoNilNode(t *testing.T) {
 		remove int
 	}{
 		// add
-		{name: "0->1", input: generateTestCaseData(0), add: 1},
-		{name: "0->3", input: generateTestCaseData(0), add: 3},
-		{name: "0->7", input: generateTestCaseData(0), add: 7},
-		{name: "0->15", input: generateTestCaseData(0), add: 15},
+		{name: "0->1", input: generateRandomPoint2Ds(0), add: 1},
+		{name: "0->3", input: generateRandomPoint2Ds(0), add: 3},
+		{name: "0->7", input: generateRandomPoint2Ds(0), add: 7},
+		{name: "0->15", input: generateRandomPoint2Ds(0), add: 15},
 		// remove
-		{name: "5->1", input: generateTestCaseData(5), remove: 4},
-		{name: "32->3", input: generateTestCaseData(32), remove: 29},
-		{name: "17->7", input: generateTestCaseData(17), remove: 10},
-		{name: "17->15", input: generateTestCaseData(17), remove: 2},
+		{name: "5->1", input: generateRandomPoint2Ds(5), remove: 4},
+		{name: "32->3", input: generateRandomPoint2Ds(32), remove: 29},
+		{name: "17->7", input: generateRandomPoint2Ds(17), remove: 10},
+		{name: "17->15", input: generateRandomPoint2Ds(17), remove: 2},
 		// remove & add
-		{name: "50->8->15", input: generateTestCaseData(50), remove: 42, add: 7},
+		{name: "50->8->15", input: generateRandomPoint2Ds(50), remove: 42, add: 7},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestKDTree_BalanceNoNilNode(t *testing.T) {
 			for i := 0; i < test.remove; i++ {
 				tree.Remove(test.input[i])
 			}
-			for _, p := range generateTestCaseData(test.add) {
+			for _, p := range generateRandomPoint2Ds(test.add) {
 				tree.Insert(p)
 			}
 			tree.Balance()
@@ -410,13 +410,13 @@ func TestKDTree_KNNWithGenerator(t *testing.T) {
 		k      int
 		input  []kdtree.Point
 	}{
-		{name: "p:100,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(100)},
-		{name: "p:1000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(1000)},
-		{name: "p:10000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(10000)},
-		{name: "p:100000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(100000)},
-		{name: "p:1000000,k:10", target: &Point2D{}, k: 10, input: generateTestCaseData(1000000)},
-		{name: "p:1000000,k:20", target: &Point2D{}, k: 20, input: generateTestCaseData(1000000)},
-		{name: "p:1000000,k:30", target: &Point2D{}, k: 30, input: generateTestCaseData(1000000)},
+		{name: "p:100,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(100)},
+		{name: "p:1000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(1000)},
+		{name: "p:10000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(10000)},
+		{name: "p:100000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(100000)},
+		{name: "p:1000000,k:10", target: &Point2D{}, k: 10, input: generateRandomPoint2Ds(1000000)},
+		{name: "p:1000000,k:20", target: &Point2D{}, k: 20, input: generateRandomPoint2Ds(1000000)},
+		{name: "p:1000000,k:30", target: &Point2D{}, k: 30, input: generateRandomPoint2Ds(1000000)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -435,13 +435,13 @@ func TestKDTree_RangeSearch(t *testing.T) {
 	}{
 		{
 			name:     "nil",
-			tree:     kdtree.New(generateTestCaseData(5)),
+			tree:     kdtree.New(generateRandomPoint2Ds(5)),
 			input:    nil,
 			expected: []kdtree.Point{},
 		},
 		{
 			name:     "wrong dim",
-			tree:     kdtree.New(generateTestCaseData(5)),
+			tree:     kdtree.New(generateRandomPoint2Ds(5)),
 			input:    kdrange.New(),
 			expected: []kdtree.Point{},
 		},
@@ -483,16 +483,59 @@ func TestKDTree_RangeSearchWithGenerator(t *testing.T) {
 		input []kdtree.Point
 		r     kdrange.Range
 	}{
-		{name: "nodes: 100 range: -100 50 -50 100", input: generateTestCaseData(100), r: kdrange.New(-100, 50, -50, 100)},
-		{name: "nodes: 1000 range: -100 50 -50 100", input: generateTestCaseData(1000), r: kdrange.New(-100, 50, -50, 100)},
-		{name: "nodes: 10000 range: -100 50 -50 100", input: generateTestCaseData(10000), r: kdrange.New(-100, 50, -50, 100)},
-		{name: "nodes: 100000 range: -500 250 -250 500", input: generateTestCaseData(100000), r: kdrange.New(-500, 250, -250, 500)},
-		{name: "nodes: 1000000 range: -500 250 -250 500", input: generateTestCaseData(1000000), r: kdrange.New(-500, 250, -250, 500)},
+		{name: "nodes: 100 range: -100 50 -50 100", input: generateRandomPoint2Ds(100), r: kdrange.New(-100, 50, -50, 100)},
+		{name: "nodes: 1000 range: -100 50 -50 100", input: generateRandomPoint2Ds(1000), r: kdrange.New(-100, 50, -50, 100)},
+		{name: "nodes: 10000 range: -100 50 -50 100", input: generateRandomPoint2Ds(10000), r: kdrange.New(-100, 50, -50, 100)},
+		{name: "nodes: 100000 range: -500 250 -250 500", input: generateRandomPoint2Ds(100000), r: kdrange.New(-500, 250, -250, 500)},
+		{name: "nodes: 1000000 range: -500 250 -250 500", input: generateRandomPoint2Ds(1000000), r: kdrange.New(-500, 250, -250, 500)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tree := kdtree.New(test.input)
-			assert.ElementsMatch(t, filterRangeSearch(test.input, test.r), tree.RangeSearch(test.r))
+			assert.Equal(t, filterRangeSearch(test.input, test.r), tree.RangeSearch(test.r))
+		})
+	}
+}
+
+func TestKDTree_LineTrace(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      []kdtree.Point
+		start      kdtree.Point
+		end        kdtree.Point
+		radius     float64
+		expectDist float64
+	}{
+		{
+			name:       "hit (0,0) at 0.95",
+			input:      generateGridPoint2Ds(1, 100),
+			start:      makePoint(10, 0),
+			end:        makePoint(0, 0),
+			radius:     0.5,
+			expectDist: 0.95,
+		},
+		{
+			name:       "miss (0,0) parallel",
+			input:      generateGridPoint2Ds(1, 100),
+			start:      makePoint(1, 0),
+			end:        makePoint(1, 10),
+			radius:     0.5,
+			expectDist: math.MaxFloat64,
+		},
+		{
+			name:       "miss (0,0) parallel",
+			input:      generateGridPoint2Ds(2, 100),
+			start:      makePoint(1, 0),
+			end:        makePoint(1, 10),
+			radius:     0.5,
+			expectDist: math.MaxFloat64,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tree := kdtree.New(test.input)
+			_, dist := tree.LineTrace(test.start, test.end, test.radius)
+			assert.Equal(t, test.expectDist, dist)
 		})
 	}
 }
@@ -543,7 +586,7 @@ func TestKDTree_RemoveAxisInversionGenerator(t *testing.T) {
 		tree := kdtree.New(nil)
 		arr := make([]kdtree.Point, 0, maxSize+1)
 		for i := 0; i < 1000; i++ {
-			p := generateTestPoint(dims)
+			p := generateRandomPoint(dims)
 
 			// Two KNN queries
 			fewNN := tree.KNN(p, 1)
@@ -579,10 +622,10 @@ func BenchmarkNew(b *testing.B) {
 		name  string
 		input []kdtree.Point
 	}{
-		{name: "100", input: generateTestCaseData(100)},
-		{name: "1000", input: generateTestCaseData(1000)},
-		{name: "10000", input: generateTestCaseData(10000)},
-		{name: "100000", input: generateTestCaseData(100000)},
+		{name: "100", input: generateRandomPoint2Ds(100)},
+		{name: "1000", input: generateRandomPoint2Ds(1000)},
+		{name: "10000", input: generateRandomPoint2Ds(10000)},
+		{name: "100000", input: generateRandomPoint2Ds(100000)},
 	}
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
@@ -602,10 +645,10 @@ func BenchmarkKNN(b *testing.B) {
 		k      int
 		input  []kdtree.Point
 	}{
-		{name: "p:100,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(100)},
-		{name: "p:1000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(1000)},
-		{name: "p:10000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(10000)},
-		{name: "p:100000,k:5", target: &Point2D{}, k: 5, input: generateTestCaseData(100000)},
+		{name: "p:100,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(100)},
+		{name: "p:1000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(1000)},
+		{name: "p:10000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(10000)},
+		{name: "p:100000,k:5", target: &Point2D{}, k: 5, input: generateRandomPoint2Ds(100000)},
 	}
 	for _, bm := range benchmarks {
 		var res []kdtree.Point
@@ -621,7 +664,7 @@ func BenchmarkKNN(b *testing.B) {
 
 // helpers
 
-func generateTestCaseData(size int) []kdtree.Point {
+func generateRandomPoint2Ds(size int) []kdtree.Point {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var points []kdtree.Point
 	for i := 0; i < size; i++ {
@@ -631,12 +674,31 @@ func generateTestCaseData(size int) []kdtree.Point {
 	return points
 }
 
-func generateTestPoint(dimensions int) kdtree.Point {
+func generateGridPoint2Ds(size int, spacing float64) []kdtree.Point {
+	var points []kdtree.Point
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			points = append(points, makePoint(float64(x)*spacing, float64(y)*spacing))
+		}
+	}
+
+	return points
+}
+
+func generateRandomPoint(dimensions int) kdtree.Point {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	values := make([]float64, dimensions)
 	for j := range values {
 		values[j] = r.Float64()*3000 - 1500
 	}
+	return NewPoint(values, nil)
+}
+
+func makePoint(x, y float64) kdtree.Point {
+	values := make([]float64, 2)
+	values[0] = x
+	values[1] = y
+
 	return NewPoint(values, nil)
 }
 
